@@ -1,0 +1,418 @@
+---
+title: "Problem Set 2"
+author: "Jay Iyer"
+date: "Fall 2024"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+urlcolor: blue
+---
+
+### Collaborators
+
+I collaborated with no one.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r}
+# Put all necessary libraries here
+# We got you started!
+library(tidyverse)
+library(ggmap)
+```
+
+## Due: September 29, 2024 at 11:59pm
+
+## Notes on Submitting
+
+1.  Please knit to pdf and submit that on Gradescope. When knitting to pdf, include `eval = FALSE` in any code chunks that contain an animated or interactive graph.
+2.  Please also knit to html and push that (along with the Rmd and any other relevant files) to your `work-username` GitHub repo so that the Graders can access the html document with your animated and interactive graphs. (So include `eval = TRUE` in any code chunks that contain an animated or interactive graph when knitting to html).
+
+## Goals of this lab
+
+1.  Further explore `ggplot2`.
+2.  Practice some data wrangling with `dplyr` and `forcats`.
+3.  Practice creating static maps with `ggmap`.
+4.  Practice incorporating animation into a graph with `gganimate`.
+5.  Practice incorporating interactivity into a graph with `plotly`.
+
+## Problems
+
+We will continue to use the `crash_data` from P-Set 1 in this p-set.
+
+```{r}
+# Read in the data
+crash_data <- read_csv("https://raw.githubusercontent.com/harvard-stat108s23/materials/main/psets/data/cambridge_cyclist_ped_crash.csv") 
+```
+
+### Problem 1
+
+Watch the [Glamour of Graphics](https://www.rstudio.com/resources/rstudioconf-2020/the-glamour-of-graphics/) video, a talk given by William Chase at RStudio::Conf 2020. Take one of your graphs from P-Set 1 and recreate the graph while incorporating at least three of William's suggestions (that aren't already implemented by default). Note: William doesn't provide `R` code so you will need to do some sleuthing to add these features.
+
+State the suggestions that you incorporated and show us the original as well as the new version.
+
+```{=tex}
+\textcolor{blue}{The suggestions that I incorporated include:
+\begin{enumerate}
+\item Improve the data-to-ink ratio: The goal here is to eliminate unnecessary components from the graph to focus on the data \\
+\item Use informative color scales: Modify the color scales to use uniform colors, which will help provide a better perception \\
+\item Add better annotation: Make labels and titles more specific and descriptive to provide better context
+\end{enumerate}}
+```
+```{r, Problem 1, eval = T, echo = T}
+# Original Graph
+
+ggplot(crash_data, aes(x = lon, y = lat)) +
+  geom_bin2d(bins = 30) +
+  scale_fill_gradientn(colors = c("yellow", "orange", "red", "darkred")) +
+  labs(x = "Longitude", y = "Latitude", fill = "Density", title = "Heatmap of Longitude and Latitude") +
+  theme_minimal()
+
+
+# Graph with suggestions incorporated 
+
+ggplot(crash_data, aes(x = lon, y = lat)) +
+  geom_bin2d(bins = 30) +
+  scale_fill_viridis_c(option = "C", name = "Crash Density") +  
+  labs(x = "Longitude (°E)", y = "Latitude (°N)", title = "Crash Density Heatmap Across Coordinates", 
+       subtitle = "Data represents crash occurrences based on location") +  
+  theme_minimal(base_size = 14) +
+  theme(panel.grid.minor = element_blank(), panel.grid.major = element_line(size = 0.5)) 
+
+
+
+
+
+```
+
+\textcolor{blue}{The major changes that I mad ewas to reduce the prominence of the gridlines by adjusting gridline size and removing minor gridlines to declutter the graph. Additionally, I replaced the previous color gradient with the viridis color scale for better gradient readability. Then, I changed the axis labels to include units and made the title and subtitle more descriptive, thereby providing better context about the data being shown.}
+
+### Problem 2
+
+In this problem, you are going to animate one of your graphs from P-Set 1.
+
+a.  Recreate your scatterplot from Problem 2(a) from P-Set 1 here. (Just copy and paste the same code from 2(b).)
+
+```{r, Problem 2a, eval = T}
+ggplot(crash_data, aes(x = lon, y = lat)) +
+  geom_jitter(alpha = 0.4, width = 0.01, height = 0.01, color = "red") +
+  labs(x = "Longitude", y = "Latitude", title = "Scatterplot of Longitude and Latitude with Jittering (Red Points)") +
+  theme_minimal()
+
+
+
+```
+
+b.  Use the `ggmap` package to grab a map of Cambridge and layer your scatterplot on top of the Cambridge map tile.
+
+```{r, Problem 2b, eval = T}
+
+# Register with google API key
+register_google(key = "AIzaSyB4URYaC1LjVaTwtBIFYpcchMQ6uIfS2xk")
+ 
+# Retrieve cambridge map
+cambridge_map <- get_map(location = "Cambridge, MA", zoom = 13, maptype = "terrain")
+
+# Add map to plot
+
+ggmap(cambridge_map) +
+  geom_jitter(data = crash_data, aes(x = lon, y = lat), alpha = 0.4, width = 0.01, height = 0.01, color = "red") +
+  labs(x = "Longitude", y = "Latitude", 
+       title = "Scatterplot of Longitude and Latitude with Jittering on Cambridge Map") +
+  theme_minimal()
+
+
+
+```
+
+Suggestions:
+
+1.  You might need to play around with the zoom argument a bit when pulling the map.
+2.  Don't use the watercolor map type.
+3.  Play around with the color and size of your points so that they are visible on the map.
+
+<!-- -->
+
+c.  Swap out the points in your plot from (b) for images of a car by using the `ggimage` package!
+
+```{r Problem 2c, eval = T, cache = T}
+library(ggimage)
+
+car_image_url <- "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTqjd6pxKofvaeMq0O8rx6lA5UrSW487AdlvA&s"
+
+ggmap(cambridge_map) +
+  geom_image(data = crash_data, aes(x = lon, y = lat), 
+             image = car_image_url, size = 0.05, alpha = 0.7) +  
+  labs(x = "Longitude", y = "Latitude", 
+       title = "Scatterplot of Longitude and Latitude with Car Images on Cambridge Map") +
+  theme_minimal()
+
+
+
+
+```
+
+d.  Now facet your graph by hour of the day. Notice that the order of the hours is probably not what we want. Use `fct_relevel()` to reorder the categories before creating the graph.
+
+```{r, fig.width = 8, fig.height = 11, cache = T}
+library(forcats)
+
+correct_order <- c("12:00AM to 12:59AM", "01:00AM to 01:59AM", "02:00AM to 02:59AM", 
+                   "03:00AM to 03:59AM", "04:00AM to 04:59AM", "05:00AM to 05:59AM", 
+                   "06:00AM to 06:59AM", "07:00AM to 07:59AM", "08:00AM to 08:59AM", 
+                   "09:00AM to 09:59AM", "10:00AM to 10:59AM", "11:00AM to 11:59AM", 
+                   "12:00PM to 12:59PM", "01:00PM to 01:59PM", "02:00PM to 02:59PM", 
+                   "03:00PM to 03:59PM", "04:00PM to 04:59PM", "05:00PM to 05:59PM", 
+                   "06:00PM to 06:59PM", "07:00PM to 07:59PM", "08:00PM to 08:59PM", 
+                   "09:00PM to 09:59PM", "10:00PM to 10:59PM", "11:00PM to 11:59PM")
+
+crash_data$crash_hour <- fct_relevel(crash_data$crash_hour, correct_order)
+
+ggmap(cambridge_map) +
+  geom_image(data = crash_data, aes(x = lon, y = lat), 
+             image = car_image_url, size = 0.05, alpha = 0.7) +  
+  facet_wrap(~ crash_hour, ncol = 4) +  
+  labs(x = "Longitude", y = "Latitude", 
+       title = "Scatterplot of Longitude and Latitude by Hour with Car Images on Cambridge Map") +
+  theme_minimal()
+
+```
+
+e.  Return to your static graph from (c) but this time instead of faceting by the hour of the day, we want you to animate the graph where you transition over the hours of the day using the `transition_states()` function in [`gganimate`](https://ugoproto.github.io/ugo_r_doc/pdf/gganimate.pdf). Pick reasonable arguments for `transition_states()` to control the speed of the animation. Additionally, we want you to include an animated label that provides the hour of the day. Hint: Use the `gganimate` cheat sheet to determine the correct label variable for the `transition_states()` function.
+
+```{r, eval= T, cache = T}
+library(gganimate)
+
+
+animated_plot <- ggmap(cambridge_map) +
+  geom_image(data = crash_data, aes(x = lon, y = lat), 
+             image = car_image_url, size = 0.05, alpha = 0.7) + 
+  labs(x = "Longitude", y = "Latitude", 
+       title = "Scatterplot of Longitude and Latitude with Car Images on Cambridge Map",
+       subtitle = 'Hour of the day: {closest_state}') +  
+  theme_minimal() +
+  transition_states(crash_hour, transition_length = 2, state_length = 1) + 
+  enter_fade() + 
+  exit_fade()
+
+animate(animated_plot, nframes = 100, fps = 10)
+```
+
+f.  Compare and contrast the effectiveness of the graphs in (d) and (e). Which is better at telling an interesting story? Justify your answer.
+
+\textcolor{blue}{The animated plot is more effective than the static set of plots in part (d), because it enables the viewer to visualize patterns regarding the distribution of accidents in real time, without having to move one's eyes from plot to plot to examine patterns. For example, we can clearly see in the animated plot clear differences in the distribution and the amount of car crashes. At nighttime, there are less crashes, and the distribution seems to be more localized to high traffic areas. During the day, there are more crashes and the cars are more distributed.}
+
+### Problem 3
+
+Let's take a static plot you made in P-Set 1 and add some animation and interactivity. (It needs to be a different graph than the one in Problem 2.)
+
+a.  Grab the code and recreate the static graph here.
+
+```{r Problem 3, eval = T}
+ggplot(crash_data, aes(x = lon, y = lat, color = crash_severity_descr)) +
+  geom_jitter(alpha = 0.4, width = 0.01, height = 0.01) +
+  scale_color_manual(values = c("Fatal injury" = "red", "Non-fatal injury" = "orange", "Not Reported" = "blue")) +
+  labs(x = "Longitude", y = "Latitude", color = "Crash Severity", title = "Scatterplot of Crashes with Severity Mapped to Color") +
+  theme_minimal()
+
+
+```
+
+b.  Now add animation. In particular, consider
+
+-   How you want to transition from frame to frame.
+-   How the data should enter and exit the plot.
+-   The speeds of various aspects of the animation.
+-   Adding frame information to the title and/or subtitle.
+-   Whether or not the view should change as the animation progresses.
+
+The [`gganimate`](https://ugoproto.github.io/ugo_r_doc/pdf/gganimate.pdf) cheatsheet will likely be helpful here!
+
+```{r, eval= T}
+animated_plot <- ggplot(crash_data, aes(x = lon, y = lat, color = crash_severity_descr)) +
+  geom_jitter(alpha = 0.4, width = 0.01, height = 0.01) +
+  scale_color_manual(values = c("Fatal injury" = "red", "Non-fatal injury" = "orange", "Not Reported" = "blue")) +
+  labs(x = "Longitude", y = "Latitude", color = "Crash Severity", 
+       title = "Scatterplot of Crashes: {closest_state}",  
+       subtitle = "Transitioning through hours of the day",
+       caption = "Data transitions by crash hour") +
+  theme_minimal() +
+  
+  transition_states(crash_severity_descr, transition_length = 2, state_length = 1) +
+  
+  enter_fade() +  
+  exit_fade() +   
+  
+  view_follow(fixed_y = TRUE, fixed_x = TRUE)  
+
+# Render the animation
+animate(animated_plot, nframes = 100, fps = 10)
+
+```
+
+c.  In what ways did the animation improve the plot? In what ways did the animation worsen the plot? Explain your reasoning.
+
+\textcolor{blue}{Animation improved the plot, as it enables us to see different types of injuries in isolation, without the points being muddled with other categories. Additionally, animation improves the plot by allowing us to quickly visualize differences in distribution patterns in different categories of injuries for these crashes. Animation worsened the plot as we cannot see all points at the same time, making it difficult to compare all different types of crashes at once.}
+
+d.  Now take the static graph from (a) and make it interactive.
+
+```{r, eval= T}
+library(plotly)
+
+scatter_plot <- ggplot(crash_data, aes(x = lon, y = lat, color = crash_severity_descr)) +
+  geom_jitter(alpha = 0.4, width = 0.01, height = 0.01) +
+  scale_color_manual(values = c("Fatal injury" = "red", "Non-fatal injury" = "orange", "Not Reported" = "blue")) +
+  labs(x = "Longitude", y = "Latitude", color = "Crash Severity", 
+       title = "Scatterplot of Crashes with Severity Mapped to Color") +
+  theme_minimal()
+
+interactive_plot <- ggplotly(scatter_plot)
+
+interactive_plot
+```
+
+e.  In what ways did the interactivity improve the plot? In what ways did the interactivity worsen the plot? Explain your reasoning.
+
+\textcolor{blue}{Interactivity improves the plot as it allows viewers to hover over individual points and see additional information, like crash severity or time of occurence, which is useful in the case of these dense plots. Further, the ability to zoom and pan in different regions of the plot gives individuals the ability to focus on specific regions of interest. Finally, interactivity makes the plot more engaging and accessible to users. Interactivity worsened the plot as it slowed down the responsiveness of the plot, and added slightly too much detail in dense plots. This could make it overwhelming to explore the data. Further, the interactivity might detract from the minimalist aesthetic of a well-designed plot.}
+
+### Problem 4
+
+Let's use the crash data to practice some data wrangling with `dplyr` and `forcats`.
+
+a.  The `ambnt_light_descr` variable contains information on the ambient light at time of crash. Note how the variable contains multiple categories for "dark". Use `fct_collapse()` to collapse the three categories for dark while keeping the categories for dawn, daylight, and dusk; set the other categories to `NA` by using `other_level = "NULL"`.
+
+```{r, Problem 4a, eval = T}
+# Collapse the categories for ambnt_light_descr
+crash_data <- crash_data %>%
+  mutate(ambnt_light_descr = fct_collapse(ambnt_light_descr,
+                                          Dark = c("Dark - no street lights", 
+                                                   "Dark - street lights on", 
+                                                   "Dark - street lights off"),
+                                          Daylight = "Daylight",
+                                          Dawn = "Dawn",
+                                          Dusk = "Dusk",
+                                          other_level = "NULL"))  
+```
+
+b.  Do crashes tend to happen in different places during the day as opposed to at night? Using only data from crashes that occurred either with dark or daylight levels of ambient light, recreate your scatterplot from Problem 2(a) from P-Set 1. Be sure that the distinction between daytime versus nighttime crashes is visible on your plot.
+
+```{r Problem 4b, eval = T}
+
+day_night_crashes <- crash_data %>%
+  filter(ambnt_light_descr %in% c("Dusk", "Daylight"))
+
+ggplot(day_night_crashes, aes(x = lon, y = lat, color = ambnt_light_descr)) +
+  geom_jitter(alpha = 0.4, width = 0.01, height = 0.01) +
+  scale_color_manual(values = c("Dusk" = "blue", "Daylight" = "yellow")) +  
+  labs(x = "Longitude", y = "Latitude", color = "Ambient Light",
+       title = "Scatterplot of Crashes by Ambient Light (Day vs Night)") +
+  theme_minimal()
+
+
+```
+
+c.  Based on your graph in part (b), does it seem like crashes tend to happen in different places during the day as opposed at night? Explain your reasoning.
+
+\textcolor{blue}{Based on my graph in part (b) it seems like there is a lot of overlap between daylight and nighttime crashes, which shows that crashes occur in similar areas regardless of the time of day. Further, both day and night crashes appear to be clustered in the same general regions, which suggests that these areas might be high-traffic or prone to accidents regardless of lighting conditions.}
+
+d.  From these data, can we conclude that crashes are more likely to happen during the day than at night? Explain your reasoning.
+
+\textcolor{blue}{From these data, we \textbf{cannot} conclude that crashes are more likely to happen during the day than at night. We have no information about the total number of crashes during the day vs. at night. The plot only visualizes the distribution of crashes that occur during the day than at night. To answer this question, we would need to know the total number of crashes during both time periods, and consider the exposure time and traffic volume during the different exposure times.}
+
+e.  Let's examine which types of collisions are more likely to result in injury, as opposed to those which result in only property damage and no injury. Create a data visualization in which it is possible to compare the proportion of collisions resulting in injury versus not between angle, head-on, rear-end, sideswipe, and single-vehicle collisions (this is stored in the manner of collision variable, `manr_coll_descr`). The variable `crash_severity_descr` contains information on whether there was an injury or not. Describe the story that the visualization communicates.
+
+```{r Problem 4e, eval = T}
+
+crash_data <- crash_data %>%
+  mutate(manr_coll_descr = fct_collapse(manr_coll_descr, 
+                                        Sideswipe = c("Sideswipe, same direction",
+                                                      "Sideswipe, opposite
+                                                      direction")))
+
+crash_data <- crash_data %>%
+  mutate(crash_severity_descr = fct_collapse(crash_severity_descr, 
+                                        Injury = c("Fatal injury",
+                                                      "Non-fatal injury")))
+
+
+collision_data <- crash_data %>%
+  filter(manr_coll_descr %in% c("Angle", "Head-on", "Rear-end", "Sideswipe", "Single vehicle crash")) %>%
+  filter(crash_severity_descr %in% c("Injury", "Property damage only (none injured)"))
+
+collision_summary <- collision_data %>%
+  group_by(manr_coll_descr, crash_severity_descr) %>%
+  summarise(count = n()) %>%
+  group_by(manr_coll_descr) %>%
+  mutate(proportion = count / sum(count))  
+
+ggplot(collision_summary, aes(x = manr_coll_descr, y = proportion, fill = crash_severity_descr)) +
+  geom_bar(stat = "identity", position = "fill") +  
+  scale_fill_manual(values = c("Injury" = "red", "Property damage only (none injured)" = "blue")) +
+  labs(x = "Type of Collision", y = "Proportion of Crashes", fill = "Crash Severity",
+       title = "Proportion of Collisions Resulting in Injury vs Property Damage") +
+  theme_minimal()
+
+
+
+```
+
+\textcolor{blue}{The plot shows that the proportion of crashes resulting in injury was high for angle collisions. Angle collisions generally lead to injuries, with few resulting in property damage only. Angle, head-on, and single-vehicle crashes are the most likely to result in injury. These types of collisions tend to involve more severe impacts or risky maneuvers. On the other hand, lower-injury collisions include rear-end and sideswipe colisions, which have a higher proportion of crashes resulting in property damage only. }
+
+f.  The variable `max_injr_svrty_cl` provides information on injury status descriptions and `speed_limit` indicates the speed limit at the location the crash took place. Create a wrangled dataframe that displays information on the hour the crash took place, the manner of collision, injury status (`max_injr_svrty_cl`), and speed limit for the crashes that happened in the dark in 2022. Arrange the observations in order from highest to lowest speed limit using another `dplyr` function: `arrange()`. When did the crashes going at the highest speed limit happen and were there injuries?
+
+```{r Problem 4f, eval = T}
+dark_crashes_2022 <- crash_data %>%
+  filter(ambnt_light_descr == "Dusk", year == 2022)
+
+dark_crashes_2022 <- dark_crashes_2022 %>%
+  select(crash_hour, manr_coll_descr, max_injr_svrty_cl, speed_limit)
+
+
+dark_crashes_2022 <- dark_crashes_2022 %>%
+  arrange(desc(speed_limit))
+
+dark_crashes_2022
+
+
+
+
+```
+
+\textcolor{blue}{At the highest speed limit (35), crashes happened in the early morning, between the hours of midnight to 1 AM, and there were suspected serious inhjuries.}
+
+g.  Create a wrangled dataframe using data on crashes that happened in the dark in 2022 which shows the number of injuries for each possible injury status. What was the most common type of injury reported at these crashes?
+
+```{r Problem 4g, eval = T}
+dark_crashes_injuries_2022 <- crash_data %>%
+  filter(ambnt_light_descr == "Dusk", year == 2022)
+
+injury_summary <- dark_crashes_injuries_2022 %>%
+  group_by(max_injr_svrty_cl) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) 
+
+injury_summary
+
+
+
+
+```
+
+\textcolor{blue}{The most common injury reported at these crashes was a suspected minor injury.}
+
+### Problem 5
+
+**We will cover git/GitHub later this week, so you should wait until then to do this problem. If needed, we can extend the pset date accordingly.**
+
+In this problem, we will practice interacting with GitHub on the site directly and from RStudio. Do this practice on **your work_username repo** so that the graders can check your progress with Git and can access the other components of P-Set 2.
+
+a.  Let's practice creating and closing **Issues**. In a nutshell, **Issues** let us keep track of our work. Within your repo on GitHub.com, create an Issue entitled "Complete P-Set 2". Once P-Set 2 is done, close the **Issue**. (If you want to learn more about the functionalities of Issues, check out this [page](https://guides.github.com/features/issues/).)
+
+b.  The landing page of your repo is a ReadMe.md file. The "md" stands for markdown and is a common format for text files. The ReadMe file is meant to provide a quick introduction to the purpose and contents of a repo.
+
+Edit the ReadMe of your repo to include your name and a quick summary of the purpose of the repo. You can edit from within GitHub directly or within RStudio. If you edit in RStudio, make sure to push your changes to GitHub.
+
+c.  Upload your P-Set 2 .Rmd, .pdf, .html and other relevant components to your repo on GitHub. You should still submit the .pdf on Gradescope but some of the other components the graders will grade directly in your GitHub repo.
